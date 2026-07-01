@@ -13,10 +13,10 @@ public static class DbSeeder
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        var adminEmail = configuration["ADMIN_EMAIL"]
-            ?? throw new InvalidOperationException("Variável de ambiente ADMIN_EMAIL não configurada.");
-        var adminPassword = configuration["ADMIN_PASSWORD"]
-            ?? throw new InvalidOperationException("Variável de ambiente ADMIN_PASSWORD não configurada.");
+        var adminEmail = configuration["AdminCredentials:Email"]
+            ?? throw new InvalidOperationException("Variável de ambiente AdminCredentials:Email não configurada.");
+        var adminPassword = configuration["AdminCredentials:Password"]
+            ?? throw new InvalidOperationException("Variável de ambiente AdminCredentials:Password não configurada.");
 
         var jaExiste = await context.Usuarios.AnyAsync(u => u.Email == adminEmail);
         if (jaExiste)
