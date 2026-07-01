@@ -1,5 +1,8 @@
 using GestaoDePedidos.Common.Exceptions;
+using GestaoDePedidos.Common.Security;
 using GestaoDePedidos.Data;
+using GestaoDePedidos.Repository;
+using GestaoDePedidos.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestaoDePedidos.DependencyInjection;
@@ -13,6 +16,15 @@ public class RegisterServices
 
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+
+        services.AddSingleton(sp => JwtSettings.FromConfiguration(sp.GetRequiredService<IConfiguration>()));
+        services.AddScoped<ITokenService, TokenService>();
+
+        services.AddScoped<IClienteRepository, ClienteRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+        services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         // Repositories e Services específicos entram aqui conforme as entidades forem criadas, exemplo:
         // services.AddScoped<IPedidoRepository, PedidoRepository>();
