@@ -32,4 +32,12 @@ public class PedidoController : ControllerBase
         var pedido = await _pedidoService.ObterPorIdAsync(id);
         return Ok(pedido);
     }
+
+    [HttpPatch("{id:guid}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AtualizarStatus(Guid id, [FromBody] AtualizarPedidoStatusRequest request)
+    {
+        await _pedidoService.AtualizarStatusAsync(id, request);
+        return NoContent();
+    }
 }

@@ -13,7 +13,11 @@ public static class PedidoExtensions
         Status = pedido.Status,
         DataCriacao = ParaHorarioLocal(pedido.DataCriacao),
         ValorTotal = pedido.ValorTotal,
-        Itens = pedido.Itens.Select(i => i.ToResponse()).ToList()
+        Itens = pedido.Itens.Select(i => i.ToResponse()).ToList(),
+        HistoricoStatus = pedido.HistoricoStatus
+            .OrderBy(h => h.DataAlteracao)
+            .Select(h => h.ToResponse())
+            .ToList()
     };
 
     public static PedidoItemResponse ToResponse(this PedidoItem item) => new()
@@ -23,6 +27,14 @@ public static class PedidoExtensions
         Quantidade = item.Quantidade,
         PrecoUnitario = item.PrecoUnitario,
         ValorTotal = item.ValorTotal
+    };
+
+    public static PedidoStatusHistoricoResponse ToResponse(this PedidoStatusHistorico historico) => new()
+    {
+        StatusAnterior = historico.StatusAnterior,
+        NovoStatus = historico.NovoStatus,
+        DataAlteracao = ParaHorarioLocal(historico.DataAlteracao),
+        Motivo = historico.Motivo
     };
 
     private static DateTimeOffset ParaHorarioLocal(DateTime dataUtc)

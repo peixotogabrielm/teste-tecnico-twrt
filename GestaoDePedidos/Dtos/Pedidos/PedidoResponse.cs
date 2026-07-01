@@ -10,4 +10,5 @@ public class PedidoResponse
     public DateTimeOffset DataCriacao { get; set; }
     public decimal ValorTotal { get; set; }
     public List<PedidoItemResponse> Itens { get; set; } = new();
+    public List<PedidoStatusHistoricoResponse> HistoricoStatus { get; set; } = new();
 }

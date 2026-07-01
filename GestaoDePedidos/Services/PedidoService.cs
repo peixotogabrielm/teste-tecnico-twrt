@@ -127,10 +127,59 @@ public class PedidoService : IPedidoService
     {
         var pedido = await _context.Pedidos
             .Include(p => p.Itens)
+            .Include(p => p.HistoricoStatus.OrderBy(h => h.DataAlteracao))
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id)
             ?? throw new NotFoundException("Pedido não encontrado.");
 
         return pedido.ToResponse();
+    }
+
+    public async Task AtualizarStatusAsync(Guid id, AtualizarPedidoStatusRequest request)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        var pedido = await _context.Pedidos
+            .Include(p => p.Itens)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id)
+            ?? throw new NotFoundException("Pedido não encontrado.");
+
+        var statusAtual = pedido.Status;
+
+        if (!PedidoStatusTransicaoValidator.IsValid(statusAtual, request.NovoStatus))
+        {
+            throw new ValidationException($"Transição de status inválida de {statusAtual} para {request.NovoStatus}.");
+        }
+
+        var linhasAfetadas = await _context.Pedidos
+            .Where(p => p.Id == id && p.Status == statusAtual)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Status, request.NovoStatus));
+
+        if (linhasAfetadas == 0)
+        {
+            throw new ConflictException("O status do pedido foi alterado por outra requisição. Tente novamente.");
+        }
+
+        if (request.NovoStatus == PedidoStatus.Cancelado)
+        {
+            foreach (var item in pedido.Itens)
+            {
+                await _context.Produtos
+                    .Where(p => p.Id == item.ProdutoId)
+                    .ExecuteUpdateAsync(s => s.SetProperty(p => p.EstoqueDisponivel, p => p.EstoqueDisponivel + item.Quantidade));
+            }
+        }
+
+        _context.PedidoStatusHistoricos.Add(new PedidoStatusHistorico
+        {
+            PedidoId = id,
+            StatusAnterior = statusAtual,
+            NovoStatus = request.NovoStatus,
+            Motivo = request.Motivo
+        });
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
     }
 }
