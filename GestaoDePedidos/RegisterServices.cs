@@ -20,11 +20,14 @@ public class RegisterServices
         services.AddSingleton(sp => JwtSettings.FromConfiguration(sp.GetRequiredService<IConfiguration>()));
         services.AddScoped<ITokenService, TokenService>();
 
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IProdutoService, ProdutoService>();
 
         // Repositories e Services específicos entram aqui conforme as entidades forem criadas, exemplo:
         // services.AddScoped<IPedidoRepository, PedidoRepository>();
