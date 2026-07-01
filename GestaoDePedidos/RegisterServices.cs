@@ -28,9 +28,6 @@ public class RegisterServices
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProdutoService, ProdutoService>();
-
-        // Repositories e Services específicos entram aqui conforme as entidades forem criadas, exemplo:
-        // services.AddScoped<IPedidoRepository, PedidoRepository>();
-        // services.AddScoped<IPedidoService, PedidoService>();
+        services.AddScoped<IPedidoService, PedidoService>();
     }
 }
