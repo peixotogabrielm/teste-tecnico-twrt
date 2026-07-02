@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="../testes/GestaoDePedidos.Testes.csproj" />
+  <Project Path="../GestaoDePedidos.Testes/GestaoDePedidos.Testes.csproj" />
   <Project Path="GestaoDePedidos.csproj" />
 </Solution>
