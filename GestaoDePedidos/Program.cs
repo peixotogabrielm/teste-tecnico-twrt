@@ -31,6 +31,7 @@ builder.Services.AddSwaggerGen(options =>
     }
 
     options.SchemaFilter<SchemaExamplesFilter>();
+    options.OperationFilter<AuthorizeOperationFilter>();
 });
 
 var jwtSettings = JwtSettings.FromConfiguration(builder.Configuration);
