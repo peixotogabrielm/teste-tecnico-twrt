@@ -18,7 +18,7 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
-        var usuario = await _usuarioRepository.GetByEmailAsync(request.Login);
+        var usuario = await _usuarioRepository.GetByEmailAsync(request.Email);
 
         if (usuario is null || !usuario.Ativo || !PasswordHasher.Verify(request.Senha, usuario.PasswordHash))
         {
