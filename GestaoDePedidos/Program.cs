@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Text;
 using GestaoDePedidos.Common.Security;
+using GestaoDePedidos.Common.Swagger;
 using GestaoDePedidos.Data;
 using GestaoDePedidos.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,6 +16,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.InferSecuritySchemes();
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
+
+    options.SchemaFilter<SchemaExamplesFilter>();
 });
 
 var jwtSettings = JwtSettings.FromConfiguration(builder.Configuration);

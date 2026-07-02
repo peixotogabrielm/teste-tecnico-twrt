@@ -16,9 +16,15 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    /// <summary>Autentica o Admin e retorna um JWT de acesso.</summary>
+    /// <response code="200">Login bem-sucedido; retorna o token e sua expiração.</response>
+    /// <response code="400">Requisição malformada (campos ausentes/inválidos).</response>
+    /// <response code="401">E-mail ou senha inválidos.</response>
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var response = await _authService.LoginAsync(request);
