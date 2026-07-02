@@ -1,4 +1,5 @@
 using GestaoDePedidos.Common.Exceptions;
+using GestaoDePedidos.Common.Pagination;
 using GestaoDePedidos.Common.Validation;
 using GestaoDePedidos.Data;
 using GestaoDePedidos.Dtos.Pedidos;
@@ -121,6 +122,27 @@ public class PedidoService : IPedidoService
         await transaction.CommitAsync();
 
         return pedido.ToResponse();
+    }
+
+    public async Task<PagedResult<PedidoResponse>> ObterPaginadoAsync(PagedRequest request, Guid? clienteId)
+    {
+        var query = _context.Pedidos
+            .Include(p => p.Itens)
+            .Include(p => p.HistoricoStatus.OrderBy(h => h.DataAlteracao))
+            .AsNoTracking()
+            .Where(p => clienteId == null || p.ClienteId == clienteId)
+            .OrderByDescending(p => p.DataCriacao);
+
+        var totalCount = await query.CountAsync();
+
+        var pedidos = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        var items = pedidos.Select(p => p.ToResponse()).ToList();
+
+        return new PagedResult<PedidoResponse>(items, request.PageNumber, request.PageSize, totalCount);
     }
 
     public async Task<PedidoResponse> ObterPorIdAsync(Guid id)
