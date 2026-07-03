@@ -72,6 +72,45 @@ public class ProdutoServiceTests
         _produtoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Produto>()), Times.Never);
     }
 
+    [Theory]
+    [InlineData(10.999)]
+    [InlineData(0.001)]
+    public async Task CriarAsync_DeveLancarValidationException_QuandoPrecoComMaisDeDuasCasasDecimais(decimal precoInvalido)
+    {
+        // Arrange
+        var request = CriarRequestValido();
+        request.Preco = precoInvalido;
+
+        // Act
+        var act = () => _sut.CriarAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequestException>();
+        _produtoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Produto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CriarAsync_DeveAceitarPreco_QuandoTemZerosAExtraNasCasasDecimais()
+    {
+        // Arrange: 10.5000m tem escala literal 4, mas só 1 casa decimal significativa —
+        // não deve ser rejeitado como se tivesse 4 casas decimais reais.
+        var request = CriarRequestValido();
+        request.Preco = 10.5000m;
+
+        Produto? produtoAdicionado = null;
+        _produtoRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Produto>()))
+            .Callback<Produto>(p => produtoAdicionado = p)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var response = await _sut.CriarAsync(request);
+
+        // Assert
+        response.Preco.Should().Be(10.5000m);
+        produtoAdicionado.Should().NotBeNull();
+    }
+
     [Fact]
     public async Task CriarAsync_DeveLancarValidationException_QuandoEstoqueNegativo()
     {
@@ -169,6 +208,29 @@ public class ProdutoServiceTests
         {
             Nome = "Novo Nome",
             Preco = 0,
+            UnidadeMedida = "UN",
+            PermiteVendaFracionada = false
+        };
+
+        // Act
+        var act = () => _sut.AtualizarAsync(produto.Id, request);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequestException>();
+        _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AtualizarAsync_DeveLancarValidationException_QuandoPrecoComMaisDeDuasCasasDecimais()
+    {
+        // Arrange
+        var produto = new Produto { Nome = "Antigo", Preco = 1m, EstoqueDisponivel = 10, UnidadeMedida = "UN", Ativo = true };
+        _produtoRepositoryMock.Setup(r => r.GetByIdAsync(produto.Id)).ReturnsAsync(produto);
+
+        var request = new UpdateProdutoRequest
+        {
+            Nome = "Novo Nome",
+            Preco = 9.999m,
             UnidadeMedida = "UN",
             PermiteVendaFracionada = false
         };

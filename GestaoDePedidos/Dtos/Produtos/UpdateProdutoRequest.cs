@@ -11,6 +11,7 @@ public class UpdateProdutoRequest
     [StringLength(1000)]
     public string? Descricao { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335", MinimumIsExclusive = true, ErrorMessage = "O preço deve ser maior que zero.")]
     public decimal Preco { get; set; }
 
     [Required(ErrorMessage = "A unidade de medida é obrigatória.")]

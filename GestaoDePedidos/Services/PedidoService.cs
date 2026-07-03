@@ -85,7 +85,9 @@ public class PedidoService : IPedidoService
                 throw new BadRequestException("Estoque insuficiente para o produto informado.");
             }
 
-            var valorTotalItem = ValorMonetarioValidator.Arredondar(itemRequest.Quantidade * produto.Preco);
+
+            var valorTotalItem = ValorMonetarioValidator.Arredondar(itemMesclado.Quantidade * produto.Preco);
+
 
             pedido.Itens.Add(new PedidoItem
             {

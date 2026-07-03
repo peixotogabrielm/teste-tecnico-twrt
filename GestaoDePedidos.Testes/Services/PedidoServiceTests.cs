@@ -109,6 +109,37 @@ public class PedidoServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CriarAsync_DeveArredondarValorTotalDoItemParaCimaAwayFromZero_QuandoMultiplicacaoGeraMaisDeDuasCasasDecimais()
+    {
+        // Arrange: 1.5 * 10.33 = 15.495 (3 casas) — ADR-0016 exige arredondar por item para 15.50
+        // (AwayFromZero, não ToEven, que arredondaria para 15.49 nesse caso).
+        using var seedContext = _factory.CreateContext();
+        var cliente = NovoCliente();
+        var produto = NovoProduto(preco: 10.33m, estoque: 100, permiteVendaFracionada: true);
+        seedContext.Clientes.Add(cliente);
+        seedContext.Produtos.Add(produto);
+        await seedContext.SaveChangesAsync();
+
+        var request = new CriarPedidoRequest
+        {
+            ClienteId = cliente.Id,
+            Itens = [new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 1.5m }]
+        };
+
+        // Act
+        PedidoResponse response;
+        using (var actContext = _factory.CreateContext())
+        {
+            var sut = new PedidoService(actContext);
+            response = await sut.CriarAsync(request);
+        }
+
+        // Assert
+        response.ValorTotal.Should().Be(15.50m);
+        response.Itens.Should().ContainSingle(i => i.ProdutoId == produto.Id && i.ValorTotal == 15.50m);
+    }
+
+    [Fact]
     public async Task CriarAsync_DeveLancarValidationException_QuandoClienteInativo()
     {
         // Arrange
