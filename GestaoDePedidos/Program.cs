@@ -1,8 +1,10 @@
+using GestaoDePedidos.Common.Responses;
 using GestaoDePedidos.Common.Security;
 using GestaoDePedidos.Common.Swagger;
 using GestaoDePedidos.Data;
 using GestaoDePedidos.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Reflection;
@@ -10,7 +12,16 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var (statusCode, body) = ApiErrorResponseFactory.FromModelState(context.ModelState);
+            return new ObjectResult(body) { StatusCode = statusCode };
+        };
+    });
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddEndpointsApiExplorer();

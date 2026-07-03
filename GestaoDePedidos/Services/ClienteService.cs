@@ -4,7 +4,6 @@ using GestaoDePedidos.Common.Validation;
 using GestaoDePedidos.Dtos.Clientes;
 using GestaoDePedidos.Entities;
 using GestaoDePedidos.Repository;
-using ValidationException = GestaoDePedidos.Common.Exceptions.ValidationException;
 
 namespace GestaoDePedidos.Services;
 
@@ -21,7 +20,7 @@ public class ClienteService : IClienteService
     {
         if (!DocumentoValidator.IsValid(request.Documento))
         {
-            throw new ValidationException("Documento inválido. Informe um CPF ou CNPJ válido.");
+            throw new BadRequestException("Documento inválido. Informe um CPF ou CNPJ válido.");
         }
 
         if (await _clienteRepository.ExistsAtivoComEmailAsync(request.Email))

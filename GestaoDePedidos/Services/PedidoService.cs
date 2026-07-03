@@ -6,7 +6,6 @@ using GestaoDePedidos.Dtos.Pedidos;
 using GestaoDePedidos.Entities;
 using GestaoDePedidos.Enums;
 using Microsoft.EntityFrameworkCore;
-using ValidationException = GestaoDePedidos.Common.Exceptions.ValidationException;
 
 namespace GestaoDePedidos.Services;
 
@@ -28,25 +27,25 @@ public class PedidoService : IPedidoService
 
         if (!cliente.Ativo)
         {
-            throw new ValidationException("Cliente inativo não pode criar pedidos.");
+            throw new BadRequestException("Cliente inativo não pode criar pedidos.");
         }
 
         if (request.Itens.Count == 0)
         {
-            throw new ValidationException("O pedido deve possuir pelo menos um item.");
+            throw new BadRequestException("O pedido deve possuir pelo menos um item.");
         }
 
         var produtoIds = request.Itens.Select(i => i.ProdutoId).ToList();
         if (produtoIds.Distinct().Count() != produtoIds.Count)
         {
-            throw new ValidationException("Produto duplicado no pedido: cada produto deve aparecer no máximo uma vez.");
+            throw new BadRequestException("Produto duplicado no pedido: cada produto deve aparecer no máximo uma vez.");
         }
 
         foreach (var itemRequest in request.Itens)
         {
             if (itemRequest.Quantidade <= 0)
             {
-                throw new ValidationException("A quantidade deve ser maior que zero.");
+                throw new BadRequestException("A quantidade deve ser maior que zero.");
             }
         }
 
@@ -70,19 +69,19 @@ public class PedidoService : IPedidoService
 
             if (!produto.Ativo)
             {
-                throw new ValidationException("Produto inativo não pode ser vendido.");
+                throw new BadRequestException("Produto inativo não pode ser vendido.");
             }
 
             if (!QuantidadeValidator.IsValid(itemRequest.Quantidade, produto.PermiteVendaFracionada))
             {
-                throw new ValidationException(produto.PermiteVendaFracionada
+                throw new BadRequestException(produto.PermiteVendaFracionada
                     ? "Produto fracionado aceita no máximo 3 casas decimais."
                     : "Este produto não permite venda fracionada.");
             }
 
             if (produto.EstoqueDisponivel < itemRequest.Quantidade)
             {
-                throw new ValidationException("Estoque insuficiente para o produto informado.");
+                throw new BadRequestException("Estoque insuficiente para o produto informado.");
             }
 
             var valorTotalItem = Math.Round(itemRequest.Quantidade * produto.Preco, 2, MidpointRounding.AwayFromZero);
@@ -171,7 +170,7 @@ public class PedidoService : IPedidoService
 
         if (!PedidoStatusTransicaoValidator.IsValid(statusAtual, request.NovoStatus))
         {
-            throw new ValidationException($"Transição de status inválida de {statusAtual} para {request.NovoStatus}.");
+            throw new BadRequestException($"Transição de status inválida de {statusAtual} para {request.NovoStatus}.");
         }
 
         var linhasAfetadas = await _context.Pedidos

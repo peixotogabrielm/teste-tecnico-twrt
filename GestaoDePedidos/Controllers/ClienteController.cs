@@ -1,4 +1,5 @@
 using GestaoDePedidos.Common.Pagination;
+using GestaoDePedidos.Common.Responses;
 using GestaoDePedidos.Dtos.Clientes;
 using GestaoDePedidos.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,8 +11,9 @@ namespace GestaoDePedidos.Controllers;
 [ApiController]
 [Route("api/clientes")]
 [Authorize(Roles = "Admin")]
-[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
 public class ClienteController : ControllerBase
 {
     private readonly IClienteService _clienteService;
@@ -27,8 +29,8 @@ public class ClienteController : ControllerBase
     /// <response code="409">Já existe um cliente ativo com o mesmo e-mail ou documento.</response>
     [HttpPost]
     [ProducesResponseType(typeof(ClienteResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Criar([FromBody] CreateClienteRequest request)
     {
         var cliente = await _clienteService.CriarAsync(request);
@@ -50,7 +52,7 @@ public class ClienteController : ControllerBase
     /// <response code="404">Nenhum cliente com esse id.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ClienteResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
         var cliente = await _clienteService.ObterPorIdAsync(id);
@@ -62,7 +64,7 @@ public class ClienteController : ControllerBase
     /// <response code="404">Nenhum cliente com esse id.</response>
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AtualizarStatus(Guid id, [FromBody] UpdateClienteStatusRequest request)
     {
         await _clienteService.AtualizarStatusAsync(id, request.Ativo);

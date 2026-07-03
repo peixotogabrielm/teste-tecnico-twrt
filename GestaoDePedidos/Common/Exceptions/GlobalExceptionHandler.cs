@@ -1,5 +1,5 @@
+using GestaoDePedidos.Common.Responses;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
 
 namespace GestaoDePedidos.Common.Exceptions;
 
@@ -16,26 +16,11 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         _logger.LogError(exception, "Erro não tratado: {Message}", exception.Message);
 
-        var (statusCode, title) = exception switch
-        {
-            NotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
-            ValidationException => (StatusCodes.Status400BadRequest, "Erro de validação"),
-            UnauthorizedException => (StatusCodes.Status401Unauthorized, "Não autenticado"),
-            ForbiddenAccessException => (StatusCodes.Status403Forbidden, "Acesso negado"),
-            ConflictException => (StatusCodes.Status409Conflict, "Conflito de dados"),
-            _ => (StatusCodes.Status500InternalServerError, "Erro interno do servidor")
-        };
-
-        var problemDetails = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = exception.Message
-        };
+        var (statusCode, body) = ApiErrorResponseFactory.FromException(exception);
 
         httpContext.Response.StatusCode = statusCode;
 
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(body, cancellationToken);
 
         return true;
     }

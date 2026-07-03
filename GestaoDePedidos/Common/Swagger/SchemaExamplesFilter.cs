@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
+using GestaoDePedidos.Common.Responses;
 using GestaoDePedidos.Dtos.Pedidos;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -27,13 +27,14 @@ public class SchemaExamplesFilter : ISchemaFilter
                 }
                 """);
         }
-        else if (context.Type == typeof(ProblemDetails))
+        else if (context.Type == typeof(ApiErrorResponse))
         {
             concreteSchema.Example = JsonNode.Parse("""
                 {
                   "status": 409,
                   "title": "Conflito de dados",
-                  "detail": "Não foi possível concluir o pedido devido a conflito de estoque. Tente novamente."
+                  "detail": "Não foi possível concluir o pedido devido a conflito de estoque. Tente novamente.",
+                  "errors": null
                 }
                 """);
         }

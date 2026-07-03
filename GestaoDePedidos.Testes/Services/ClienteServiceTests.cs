@@ -5,7 +5,6 @@ using GestaoDePedidos.Entities;
 using GestaoDePedidos.Repository;
 using GestaoDePedidos.Services;
 using Moq;
-using ValidationException = GestaoDePedidos.Common.Exceptions.ValidationException;
 
 namespace GestaoDePedidos.Testes.Services;
 
@@ -101,7 +100,7 @@ public class ClienteServiceTests
         var act = () => _sut.CriarAsync(request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _clienteRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Never);
     }
 

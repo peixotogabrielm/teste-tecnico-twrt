@@ -1,4 +1,5 @@
 using GestaoDePedidos.Common.Pagination;
+using GestaoDePedidos.Common.Responses;
 using GestaoDePedidos.Dtos.Pedidos;
 using GestaoDePedidos.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,8 +11,9 @@ namespace GestaoDePedidos.Controllers;
 [ApiController]
 [Route("api/pedidos")]
 [Authorize(Roles = "Admin")]
-[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
 public class PedidoController : ControllerBase
 {
     private readonly IPedidoService _pedidoService;
@@ -28,9 +30,9 @@ public class PedidoController : ControllerBase
     /// <response code="409">Conflito de concorrência: outra requisição consumiu o estoque disputado primeiro.</response>
     [HttpPost]
     [ProducesResponseType(typeof(PedidoResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Criar([FromBody] CriarPedidoRequest request)
     {
         var pedido = await _pedidoService.CriarAsync(request);
@@ -52,7 +54,7 @@ public class PedidoController : ControllerBase
     /// <response code="404">Nenhum pedido com esse id.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PedidoResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
         var pedido = await _pedidoService.ObterPorIdAsync(id);
@@ -66,9 +68,9 @@ public class PedidoController : ControllerBase
     /// <response code="409">Outra requisição alterou o status do pedido primeiro.</response>
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AtualizarStatus(Guid id, [FromBody] AtualizarPedidoStatusRequest request)
     {
         await _pedidoService.AtualizarStatusAsync(id, request);
