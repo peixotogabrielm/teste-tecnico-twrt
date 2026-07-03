@@ -3,6 +3,7 @@ using GestaoDePedidos.Common.Pagination;
 using GestaoDePedidos.Common.Validation;
 using GestaoDePedidos.Dtos.Produtos;
 using GestaoDePedidos.Entities;
+using GestaoDePedidos.Enums;
 using GestaoDePedidos.Repository;
 
 namespace GestaoDePedidos.Services;
@@ -102,19 +103,37 @@ public class ProdutoService : IProdutoService
         await _produtoRepository.SaveChangesAsync();
     }
 
-    public async Task AtualizarEstoqueAsync(Guid id, decimal estoqueDisponivel)
+    public async Task AtualizarEstoqueAsync(Guid id, TipoMovimentacaoEstoque tipo, decimal quantidade)
     {
         var produto = await _produtoRepository.GetByIdAsync(id)
             ?? throw new NotFoundException("Produto não encontrado.");
 
-        if (estoqueDisponivel < 0)
+        if (quantidade <= 0)
         {
-            throw new BadRequestException("O estoque disponível não pode ser negativo.");
+            throw new BadRequestException("A quantidade deve ser maior que zero.");
         }
 
-        ValidarCasasDecimaisEstoque(estoqueDisponivel, produto.PermiteVendaFracionada);
+        if (!QuantidadeValidator.IsValid(quantidade, produto.PermiteVendaFracionada))
+        {
+            throw new BadRequestException(produto.PermiteVendaFracionada
+                ? "A quantidade pode ter no máximo 3 casas decimais."
+                : "A quantidade deve ser um valor inteiro para produtos que não permitem venda fracionada.");
+        }
 
-        produto.EstoqueDisponivel = estoqueDisponivel;
+        if (tipo == TipoMovimentacaoEstoque.Entrada)
+        {
+            produto.EstoqueDisponivel += quantidade;
+        }
+        else
+        {
+            if (quantidade > produto.EstoqueDisponivel)
+            {
+                throw new BadRequestException("Estoque insuficiente para o produto informado.");
+            }
+
+            produto.EstoqueDisponivel -= quantidade;
+        }
+
         produto.DataAtualizacao = DateTime.UtcNow;
 
         _produtoRepository.Update(produto);

@@ -83,9 +83,9 @@ public class ProdutoController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Ajusta manualmente o estoque disponível de um produto.</summary>
+    /// <summary>Registra uma entrada ou saída manual no estoque disponível de um produto.</summary>
     /// <response code="204">Estoque atualizado.</response>
-    /// <response code="400">Estoque negativo, ou número de casas decimais incompatível com a venda fracionada do produto.</response>
+    /// <response code="400">Quantidade inválida, estoque insuficiente para a saída, ou número de casas decimais incompatível com a venda fracionada do produto.</response>
     /// <response code="404">Nenhum produto com esse id.</response>
     [HttpPatch("{id:guid}/estoque")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -93,7 +93,7 @@ public class ProdutoController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AtualizarEstoque(Guid id, [FromBody] UpdateProdutoEstoqueRequest request)
     {
-        await _produtoService.AtualizarEstoqueAsync(id, request.EstoqueDisponivel);
+        await _produtoService.AtualizarEstoqueAsync(id, request.Tipo, request.Quantidade);
         return NoContent();
     }
 }

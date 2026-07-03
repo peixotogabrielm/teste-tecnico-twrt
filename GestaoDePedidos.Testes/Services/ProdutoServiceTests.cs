@@ -2,6 +2,7 @@ using FluentAssertions;
 using GestaoDePedidos.Common.Exceptions;
 using GestaoDePedidos.Dtos.Produtos;
 using GestaoDePedidos.Entities;
+using GestaoDePedidos.Enums;
 using GestaoDePedidos.Repository;
 using GestaoDePedidos.Services;
 using Moq;
@@ -204,17 +205,103 @@ public class ProdutoServiceTests
     }
 
     [Fact]
-    public async Task AtualizarEstoqueAsync_DeveLancarValidationException_QuandoEstoqueNegativo()
+    public async Task AtualizarEstoqueAsync_DeveSomarAoEstoque_QuandoTipoEntrada()
     {
         // Arrange
         var produto = new Produto { Nome = "Antigo", Preco = 1m, EstoqueDisponivel = 10, UnidadeMedida = "UN", Ativo = true };
         _produtoRepositoryMock.Setup(r => r.GetByIdAsync(produto.Id)).ReturnsAsync(produto);
 
         // Act
-        var act = () => _sut.AtualizarEstoqueAsync(produto.Id, -5);
+        await _sut.AtualizarEstoqueAsync(produto.Id, TipoMovimentacaoEstoque.Entrada, 5);
+
+        // Assert
+        produto.EstoqueDisponivel.Should().Be(15);
+        _produtoRepositoryMock.Verify(r => r.Update(produto), Times.Once);
+        _produtoRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task AtualizarEstoqueAsync_DeveSubtrairDoEstoque_QuandoTipoSaidaComEstoqueSuficiente()
+    {
+        // Arrange
+        var produto = new Produto { Nome = "Antigo", Preco = 1m, EstoqueDisponivel = 10, UnidadeMedida = "UN", Ativo = true };
+        _produtoRepositoryMock.Setup(r => r.GetByIdAsync(produto.Id)).ReturnsAsync(produto);
+
+        // Act
+        await _sut.AtualizarEstoqueAsync(produto.Id, TipoMovimentacaoEstoque.Saida, 4);
+
+        // Assert
+        produto.EstoqueDisponivel.Should().Be(6);
+        _produtoRepositoryMock.Verify(r => r.Update(produto), Times.Once);
+        _produtoRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task AtualizarEstoqueAsync_DeveLancarBadRequestException_QuandoSaidaMaiorQueEstoqueDisponivel()
+    {
+        // Arrange
+        var produto = new Produto { Nome = "Antigo", Preco = 1m, EstoqueDisponivel = 10, UnidadeMedida = "UN", Ativo = true };
+        _produtoRepositoryMock.Setup(r => r.GetByIdAsync(produto.Id)).ReturnsAsync(produto);
+
+        // Act
+        var act = () => _sut.AtualizarEstoqueAsync(produto.Id, TipoMovimentacaoEstoque.Saida, 11);
 
         // Assert
         await act.Should().ThrowAsync<BadRequestException>();
+        produto.EstoqueDisponivel.Should().Be(10);
+        _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(TipoMovimentacaoEstoque.Entrada, 0)]
+    [InlineData(TipoMovimentacaoEstoque.Entrada, -5)]
+    [InlineData(TipoMovimentacaoEstoque.Saida, 0)]
+    [InlineData(TipoMovimentacaoEstoque.Saida, -5)]
+    public async Task AtualizarEstoqueAsync_DeveLancarBadRequestException_QuandoQuantidadeNaoPositiva(TipoMovimentacaoEstoque tipo, decimal quantidade)
+    {
+        // Arrange
+        var produto = new Produto { Nome = "Antigo", Preco = 1m, EstoqueDisponivel = 10, UnidadeMedida = "UN", Ativo = true };
+        _produtoRepositoryMock.Setup(r => r.GetByIdAsync(produto.Id)).ReturnsAsync(produto);
+
+        // Act
+        var act = () => _sut.AtualizarEstoqueAsync(produto.Id, tipo, quantidade);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequestException>();
+        produto.EstoqueDisponivel.Should().Be(10);
+        _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(TipoMovimentacaoEstoque.Entrada)]
+    [InlineData(TipoMovimentacaoEstoque.Saida)]
+    public async Task AtualizarEstoqueAsync_DeveLancarBadRequestException_QuandoQuantidadeFracionadaSemPermissao(TipoMovimentacaoEstoque tipo)
+    {
+        // Arrange: produto não permite venda fracionada, mas a quantidade informada tem casas decimais
+        var produto = new Produto { Nome = "Antigo", Preco = 1m, EstoqueDisponivel = 10, UnidadeMedida = "UN", Ativo = true, PermiteVendaFracionada = false };
+        _produtoRepositoryMock.Setup(r => r.GetByIdAsync(produto.Id)).ReturnsAsync(produto);
+
+        // Act
+        var act = () => _sut.AtualizarEstoqueAsync(produto.Id, tipo, 2.5m);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequestException>();
+        produto.EstoqueDisponivel.Should().Be(10);
+        _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AtualizarEstoqueAsync_DeveLancarNotFoundException_QuandoProdutoNaoExiste()
+    {
+        // Arrange
+        var idInexistente = Guid.NewGuid();
+        _produtoRepositoryMock.Setup(r => r.GetByIdAsync(idInexistente)).ReturnsAsync((Produto?)null);
+
+        // Act
+        var act = () => _sut.AtualizarEstoqueAsync(idInexistente, TipoMovimentacaoEstoque.Entrada, 5);
+
+        // Assert
+        await act.Should().ThrowAsync<NotFoundException>();
         _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
     }
 }
