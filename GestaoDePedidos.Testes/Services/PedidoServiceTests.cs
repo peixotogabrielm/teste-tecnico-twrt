@@ -8,7 +8,6 @@ using GestaoDePedidos.Services;
 using GestaoDePedidos.Testes.Helpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using ValidationException = GestaoDePedidos.Common.Exceptions.ValidationException;
 
 namespace GestaoDePedidos.Testes.Services;
 
@@ -133,7 +132,7 @@ public class PedidoServiceTests : IDisposable
         var act = () => sut.CriarAsync(request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
     }
 
     [Fact]
@@ -160,7 +159,7 @@ public class PedidoServiceTests : IDisposable
         var act = () => sut.CriarAsync(request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
     }
 
     [Fact]
@@ -188,7 +187,7 @@ public class PedidoServiceTests : IDisposable
             var act = () => sut.CriarAsync(request);
 
             // Assert
-            await act.Should().ThrowAsync<ValidationException>();
+            await act.Should().ThrowAsync<BadRequestException>();
         }
 
         using var assertContext = _factory.CreateContext();
@@ -228,7 +227,7 @@ public class PedidoServiceTests : IDisposable
             var act = () => sut.CriarAsync(request);
 
             // Assert
-            await act.Should().ThrowAsync<ValidationException>();
+            await act.Should().ThrowAsync<BadRequestException>();
         }
 
         using var assertContext = _factory.CreateContext();
@@ -353,7 +352,7 @@ public class PedidoServiceTests : IDisposable
             var act = () => sut.AtualizarStatusAsync(pedidoId, new AtualizarPedidoStatusRequest { NovoStatus = novoStatus });
 
             // Assert
-            await act.Should().ThrowAsync<ValidationException>();
+            await act.Should().ThrowAsync<BadRequestException>();
         }
 
         using var assertContext = _factory.CreateContext();
@@ -470,13 +469,13 @@ public class PedidoServiceTests : IDisposable
         var resultados = await Task.WhenAll(tarefa1.ContinueWith(EnvolverResultado), tarefa2.ContinueWith(EnvolverResultado));
 
         // Assert: o resultado que importa é o de negócio (nunca vender duas vezes o mesmo item
-        // unitário). A exceção da requisição perdedora pode ser ValidationException (se ela leu o
+        // unitário). A exceção da requisição perdedora pode ser BadRequestException (se ela leu o
         // estoque só depois da vencedora commitar) ou ConflictException (se perdeu exatamente no
         // UPDATE condicional do ADR-0014) - as duas são interleavings legítimos de uma corrida real
         // e ambas representam a mesma garantia: nenhuma baixa além da que o estoque permite.
         resultados.Count(r => r.Sucesso).Should().Be(1, "apenas uma das duas requisições concorrentes deveria conseguir baixar o único item em estoque");
         resultados.Count(r => !r.Sucesso).Should().Be(1);
-        resultados.Single(r => !r.Sucesso).Excecao.Should().Match(e => e is ValidationException || e is ConflictException);
+        resultados.Single(r => !r.Sucesso).Excecao.Should().Match(e => e is BadRequestException || e is ConflictException);
 
         await using var assertContext = new ApplicationDbContext(options);
         var produtoFinal = await assertContext.Produtos.AsNoTracking().FirstAsync(p => p.Id == produto.Id);

@@ -1,3 +1,4 @@
+using GestaoDePedidos.Common.Responses;
 using GestaoDePedidos.Dtos.Auth;
 using GestaoDePedidos.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ namespace GestaoDePedidos.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -23,8 +25,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var response = await _authService.LoginAsync(request);

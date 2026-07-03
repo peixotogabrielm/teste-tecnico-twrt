@@ -4,7 +4,6 @@ using GestaoDePedidos.Common.Validation;
 using GestaoDePedidos.Dtos.Produtos;
 using GestaoDePedidos.Entities;
 using GestaoDePedidos.Repository;
-using ValidationException = GestaoDePedidos.Common.Exceptions.ValidationException;
 
 namespace GestaoDePedidos.Services;
 
@@ -21,12 +20,12 @@ public class ProdutoService : IProdutoService
     {
         if (request.Preco <= 0)
         {
-            throw new ValidationException("O preço deve ser maior que zero.");
+            throw new BadRequestException("O preço deve ser maior que zero.");
         }
 
         if (request.EstoqueDisponivel < 0)
         {
-            throw new ValidationException("O estoque disponível não pode ser negativo.");
+            throw new BadRequestException("O estoque disponível não pode ser negativo.");
         }
 
         ValidarCasasDecimaisEstoque(request.EstoqueDisponivel, request.PermiteVendaFracionada);
@@ -71,13 +70,13 @@ public class ProdutoService : IProdutoService
 
         if (request.Preco <= 0)
         {
-            throw new ValidationException("O preço deve ser maior que zero.");
+            throw new BadRequestException("O preço deve ser maior que zero.");
         }
 
         var desabilitandoVendaFracionada = produto.PermiteVendaFracionada && !request.PermiteVendaFracionada;
         if (desabilitandoVendaFracionada && !QuantidadeValidator.IsValid(produto.EstoqueDisponivel, permiteVendaFracionada: false))
         {
-            throw new ValidationException("Não é possível desabilitar a venda fracionada: o estoque atual possui valor fracionado.");
+            throw new BadRequestException("Não é possível desabilitar a venda fracionada: o estoque atual possui valor fracionado.");
         }
 
         produto.Nome = request.Nome;
@@ -110,7 +109,7 @@ public class ProdutoService : IProdutoService
 
         if (estoqueDisponivel < 0)
         {
-            throw new ValidationException("O estoque disponível não pode ser negativo.");
+            throw new BadRequestException("O estoque disponível não pode ser negativo.");
         }
 
         ValidarCasasDecimaisEstoque(estoqueDisponivel, produto.PermiteVendaFracionada);
@@ -129,7 +128,7 @@ public class ProdutoService : IProdutoService
             return;
         }
 
-        throw new ValidationException(permiteVendaFracionada
+        throw new BadRequestException(permiteVendaFracionada
             ? "O estoque disponível pode ter no máximo 3 casas decimais."
             : "O estoque disponível deve ser um valor inteiro para produtos que não permitem venda fracionada.");
     }

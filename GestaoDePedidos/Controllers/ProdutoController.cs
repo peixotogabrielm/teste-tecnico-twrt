@@ -1,4 +1,5 @@
 using GestaoDePedidos.Common.Pagination;
+using GestaoDePedidos.Common.Responses;
 using GestaoDePedidos.Dtos.Produtos;
 using GestaoDePedidos.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,8 +11,9 @@ namespace GestaoDePedidos.Controllers;
 [ApiController]
 [Route("api/produtos")]
 [Authorize(Roles = "Admin")]
-[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+[ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
 public class ProdutoController : ControllerBase
 {
     private readonly IProdutoService _produtoService;
@@ -26,7 +28,7 @@ public class ProdutoController : ControllerBase
     /// <response code="400">Preço inválido, estoque negativo, ou estoque fracionado num produto que não permite venda fracionada.</response>
     [HttpPost]
     [ProducesResponseType(typeof(ProdutoResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Criar([FromBody] CreateProdutoRequest request)
     {
         var produto = await _produtoService.CriarAsync(request);
@@ -48,7 +50,7 @@ public class ProdutoController : ControllerBase
     /// <response code="404">Nenhum produto com esse id.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ProdutoResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
         var produto = await _produtoService.ObterPorIdAsync(id);
@@ -61,8 +63,8 @@ public class ProdutoController : ControllerBase
     /// <response code="404">Nenhum produto com esse id.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Atualizar(Guid id, [FromBody] UpdateProdutoRequest request)
     {
         await _produtoService.AtualizarAsync(id, request);
@@ -74,7 +76,7 @@ public class ProdutoController : ControllerBase
     /// <response code="404">Nenhum produto com esse id.</response>
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AtualizarStatus(Guid id, [FromBody] UpdateProdutoStatusRequest request)
     {
         await _produtoService.AtualizarStatusAsync(id, request.Ativo);
@@ -87,8 +89,8 @@ public class ProdutoController : ControllerBase
     /// <response code="404">Nenhum produto com esse id.</response>
     [HttpPatch("{id:guid}/estoque")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AtualizarEstoque(Guid id, [FromBody] UpdateProdutoEstoqueRequest request)
     {
         await _produtoService.AtualizarEstoqueAsync(id, request.EstoqueDisponivel);

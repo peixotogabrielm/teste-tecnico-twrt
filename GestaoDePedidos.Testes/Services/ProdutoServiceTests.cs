@@ -5,7 +5,6 @@ using GestaoDePedidos.Entities;
 using GestaoDePedidos.Repository;
 using GestaoDePedidos.Services;
 using Moq;
-using ValidationException = GestaoDePedidos.Common.Exceptions.ValidationException;
 
 namespace GestaoDePedidos.Testes.Services;
 
@@ -68,7 +67,7 @@ public class ProdutoServiceTests
         var act = () => _sut.CriarAsync(request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _produtoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Produto>()), Times.Never);
     }
 
@@ -83,7 +82,7 @@ public class ProdutoServiceTests
         var act = () => _sut.CriarAsync(request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _produtoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Produto>()), Times.Never);
     }
 
@@ -99,7 +98,7 @@ public class ProdutoServiceTests
         var act = () => _sut.CriarAsync(request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _produtoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Produto>()), Times.Never);
     }
 
@@ -177,7 +176,7 @@ public class ProdutoServiceTests
         var act = () => _sut.AtualizarAsync(produto.Id, request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
     }
 
@@ -200,7 +199,7 @@ public class ProdutoServiceTests
         var act = () => _sut.AtualizarAsync(produto.Id, request);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
     }
 
@@ -215,7 +214,7 @@ public class ProdutoServiceTests
         var act = () => _sut.AtualizarEstoqueAsync(produto.Id, -5);
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        await act.Should().ThrowAsync<BadRequestException>();
         _produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
     }
 }
