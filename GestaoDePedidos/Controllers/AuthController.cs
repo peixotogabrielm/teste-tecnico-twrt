@@ -8,6 +8,7 @@ namespace GestaoDePedidos.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[Produces("application/json")]
 [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
 public class AuthController : ControllerBase
 {

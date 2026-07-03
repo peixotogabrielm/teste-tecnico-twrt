@@ -11,6 +11,7 @@ namespace GestaoDePedidos.Controllers;
 [ApiController]
 [Route("api/produtos")]
 [Authorize(Roles = "Admin")]
+[Produces("application/json")]
 [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
 [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
