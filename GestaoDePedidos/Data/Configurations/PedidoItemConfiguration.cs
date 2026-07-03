@@ -28,5 +28,8 @@ public class PedidoItemConfiguration : IEntityTypeConfiguration<PedidoItem>
             .WithMany(p => p.PedidoItens)
             .HasForeignKey(i => i.ProdutoId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(i => new { i.PedidoId, i.ProdutoId })
+            .IsUnique();
     }
 }

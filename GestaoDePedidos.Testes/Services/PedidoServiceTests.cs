@@ -278,6 +278,148 @@ public class PedidoServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CriarAsync_DeveMesclarQuantidadeEValorTotal_QuandoMesmoProdutoApareceMaisDeUmaVezNoPedido()
+    {
+        // Arrange
+        using var seedContext = _factory.CreateContext();
+        var cliente = NovoCliente();
+        var produto = NovoProduto(preco: 10m, estoque: 50);
+        seedContext.Clientes.Add(cliente);
+        seedContext.Produtos.Add(produto);
+        await seedContext.SaveChangesAsync();
+
+        var request = new CriarPedidoRequest
+        {
+            ClienteId = cliente.Id,
+            Itens =
+            [
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 2 },
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 3 }
+            ]
+        };
+
+        // Act
+        PedidoResponse response;
+        using (var actContext = _factory.CreateContext())
+        {
+            var sut = new PedidoService(actContext);
+            response = await sut.CriarAsync(request);
+        }
+
+        // Assert: uma única linha com a quantidade somada, não duas linhas repetidas
+        response.Itens.Should().ContainSingle(i => i.ProdutoId == produto.Id && i.Quantidade == 5m && i.ValorTotal == 50m);
+        response.ValorTotal.Should().Be(50m);
+
+        using var assertContext = _factory.CreateContext();
+        var produtoFinal = await assertContext.Produtos.AsNoTracking().FirstAsync(p => p.Id == produto.Id);
+        produtoFinal.EstoqueDisponivel.Should().Be(45m, "a baixa de estoque deve considerar a quantidade já mesclada, não baixar duas vezes");
+    }
+
+    [Fact]
+    public async Task CriarAsync_DeveLancarBadRequestException_QuandoLinhaIndividualTiverQuantidadeMenorOuIgualAZero_MesmoQueSomaFinalSejaPositiva()
+    {
+        // Arrange: item 1 tem quantidade negativa, item 2 do mesmo produto compensaria a soma final,
+        // mas a linha bruta inválida deve ser rejeitada antes de qualquer merge.
+        using var seedContext = _factory.CreateContext();
+        var cliente = NovoCliente();
+        var produto = NovoProduto(preco: 10m, estoque: 50);
+        seedContext.Clientes.Add(cliente);
+        seedContext.Produtos.Add(produto);
+        await seedContext.SaveChangesAsync();
+
+        var request = new CriarPedidoRequest
+        {
+            ClienteId = cliente.Id,
+            Itens =
+            [
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = -2 },
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 10 }
+            ]
+        };
+
+        using var actContext = _factory.CreateContext();
+        var sut = new PedidoService(actContext);
+
+        // Act
+        var act = () => sut.CriarAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequestException>();
+
+        using var assertContext = _factory.CreateContext();
+        (await assertContext.Pedidos.CountAsync(p => p.ClienteId == cliente.Id)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CriarAsync_DeveValidarVendaFracionada_SobreQuantidadeJaSomadaPorProduto()
+    {
+        // Arrange: produto permite venda fracionada com até 3 casas decimais. Cada linha é válida
+        // isoladamente (3 casas), e a validação roda sobre a quantidade já somada (0.003) - também
+        // válida - confirmando que o merge acontece antes da checagem de casas decimais, e não
+        // quebra um total que continua dentro do limite.
+        using var seedContext = _factory.CreateContext();
+        var cliente = NovoCliente();
+        var produto = NovoProduto(preco: 10m, estoque: 50, permiteVendaFracionada: true);
+        seedContext.Clientes.Add(cliente);
+        seedContext.Produtos.Add(produto);
+        await seedContext.SaveChangesAsync();
+
+        var request = new CriarPedidoRequest
+        {
+            ClienteId = cliente.Id,
+            Itens =
+            [
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 0.001m },
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 0.002m }
+            ]
+        };
+
+        using var actContext = _factory.CreateContext();
+        var sut = new PedidoService(actContext);
+
+        // Act
+        var response = await sut.CriarAsync(request);
+
+        // Assert
+        response.Itens.Should().ContainSingle(i => i.ProdutoId == produto.Id && i.Quantidade == 0.003m);
+    }
+
+    [Fact]
+    public async Task CriarAsync_DeveValidarEstoque_SobreQuantidadeSomada_NaoSobreCadaLinhaIsoladamente()
+    {
+        // Arrange: cada linha isolada (3) está dentro do estoque (5), mas a soma (6) excede.
+        using var seedContext = _factory.CreateContext();
+        var cliente = NovoCliente();
+        var produto = NovoProduto(preco: 10m, estoque: 5);
+        seedContext.Clientes.Add(cliente);
+        seedContext.Produtos.Add(produto);
+        await seedContext.SaveChangesAsync();
+
+        var request = new CriarPedidoRequest
+        {
+            ClienteId = cliente.Id,
+            Itens =
+            [
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 3 },
+                new CriarPedidoItemRequest { ProdutoId = produto.Id, Quantidade = 3 }
+            ]
+        };
+
+        using var actContext = _factory.CreateContext();
+        var sut = new PedidoService(actContext);
+
+        // Act
+        var act = () => sut.CriarAsync(request);
+
+        // Assert
+        await act.Should().ThrowAsync<BadRequestException>();
+
+        using var assertContext = _factory.CreateContext();
+        var produtoFinal = await assertContext.Produtos.AsNoTracking().FirstAsync(p => p.Id == produto.Id);
+        produtoFinal.EstoqueDisponivel.Should().Be(5m);
+    }
+
+    [Fact]
     public async Task ObterPorIdAsync_DeveLancarNotFoundException_QuandoPedidoNaoExiste()
     {
         using var context = _factory.CreateContext();
