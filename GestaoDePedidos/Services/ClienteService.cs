@@ -23,12 +23,15 @@ public class ClienteService : IClienteService
             throw new BadRequestException("Documento inválido. Informe um CPF ou CNPJ válido.");
         }
 
-        if (await _clienteRepository.ExistsAtivoComEmailAsync(request.Email))
+        var email = EmailNormalizer.Normalizar(request.Email);
+        var documento = DocumentoValidator.Normalizar(request.Documento);
+
+        if (await _clienteRepository.ExistsAtivoComEmailAsync(email))
         {
             throw new ConflictException("Já existe um cliente ativo com este e-mail.");
         }
 
-        if (await _clienteRepository.ExistsAtivoComDocumentoAsync(request.Documento))
+        if (await _clienteRepository.ExistsAtivoComDocumentoAsync(documento))
         {
             throw new ConflictException("Já existe um cliente ativo com este documento.");
         }
@@ -36,8 +39,8 @@ public class ClienteService : IClienteService
         var cliente = new Cliente
         {
             Nome = request.Nome,
-            Email = request.Email,
-            Documento = request.Documento,
+            Email = email,
+            Documento = documento,
             Ativo = true
         };
 
@@ -67,6 +70,19 @@ public class ClienteService : IClienteService
     {
         var cliente = await _clienteRepository.GetByIdAsync(id)
             ?? throw new NotFoundException("Cliente não encontrado.");
+
+        if (ativo)
+        {
+            if (await _clienteRepository.ExistsAtivoComEmailAsync(cliente.Email, cliente.Id))
+            {
+                throw new ConflictException("Já existe um cliente ativo com este e-mail.");
+            }
+
+            if (await _clienteRepository.ExistsAtivoComDocumentoAsync(cliente.Documento, cliente.Id))
+            {
+                throw new ConflictException("Já existe um cliente ativo com este documento.");
+            }
+        }
 
         cliente.Ativo = ativo;
         cliente.DataAtualizacao = DateTime.UtcNow;

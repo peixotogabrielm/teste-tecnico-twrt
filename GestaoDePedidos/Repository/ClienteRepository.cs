@@ -10,9 +10,9 @@ public class ClienteRepository : Repository<Cliente>, IClienteRepository
     {
     }
 
-    public async Task<bool> ExistsAtivoComEmailAsync(string email) =>
-        await DbSet.AnyAsync(c => c.Ativo && c.Email == email);
+    public async Task<bool> ExistsAtivoComEmailAsync(string email, Guid? excludeId = null) =>
+        await DbSet.AnyAsync(c => c.Ativo && c.Email == email && c.Id != excludeId);
 
-    public async Task<bool> ExistsAtivoComDocumentoAsync(string documento) =>
-        await DbSet.AnyAsync(c => c.Ativo && c.Documento == documento);
+    public async Task<bool> ExistsAtivoComDocumentoAsync(string documento, Guid? excludeId = null) =>
+        await DbSet.AnyAsync(c => c.Ativo && c.Documento == documento && c.Id != excludeId);
 }

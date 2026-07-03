@@ -30,8 +30,8 @@ public class ClienteServiceTests
     {
         // Arrange
         var request = CriarRequestValido();
-        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComEmailAsync(request.Email)).ReturnsAsync(false);
-        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComDocumentoAsync(request.Documento)).ReturnsAsync(false);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComEmailAsync(request.Email, null)).ReturnsAsync(false);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComDocumentoAsync(request.Documento, null)).ReturnsAsync(false);
 
         Cliente? clienteAdicionado = null;
         _clienteRepositoryMock
@@ -53,6 +53,33 @@ public class ClienteServiceTests
 
         _clienteRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Once);
         _clienteRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CriarAsync_DeveNormalizarEmailEDocumento_AntesDeCompararEPersistir()
+    {
+        // Arrange
+        var request = CriarRequestValido();
+        request.Email = "  Maria.Oliveira@Example.COM  ";
+        request.Documento = "529.982.247-25";
+
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComEmailAsync("maria.oliveira@example.com", null)).ReturnsAsync(false);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComDocumentoAsync("52998224725", null)).ReturnsAsync(false);
+
+        Cliente? clienteAdicionado = null;
+        _clienteRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Cliente>()))
+            .Callback<Cliente>(c => clienteAdicionado = c)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var response = await _sut.CriarAsync(request);
+
+        // Assert
+        response.Email.Should().Be("maria.oliveira@example.com");
+        response.Documento.Should().Be("52998224725");
+        clienteAdicionado!.Email.Should().Be("maria.oliveira@example.com");
+        clienteAdicionado.Documento.Should().Be("52998224725");
     }
 
     [Fact]
@@ -145,5 +172,72 @@ public class ClienteServiceTests
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task AtualizarStatusAsync_DeveLancarConflictException_QuandoReativarComEmailColidindoComOutroAtivo()
+    {
+        // Arrange
+        var cliente = new Cliente { Nome = "João Silva", Email = "joao@example.com", Documento = "52998224725", Ativo = false };
+        _clienteRepositoryMock.Setup(r => r.GetByIdAsync(cliente.Id)).ReturnsAsync(cliente);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComEmailAsync(cliente.Email, cliente.Id)).ReturnsAsync(true);
+
+        // Act
+        var act = () => _sut.AtualizarStatusAsync(cliente.Id, true);
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>();
+        _clienteRepositoryMock.Verify(r => r.Update(It.IsAny<Cliente>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AtualizarStatusAsync_DeveLancarConflictException_QuandoReativarComDocumentoColidindoComOutroAtivo()
+    {
+        // Arrange
+        var cliente = new Cliente { Nome = "João Silva", Email = "joao@example.com", Documento = "52998224725", Ativo = false };
+        _clienteRepositoryMock.Setup(r => r.GetByIdAsync(cliente.Id)).ReturnsAsync(cliente);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComEmailAsync(cliente.Email, cliente.Id)).ReturnsAsync(false);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComDocumentoAsync(cliente.Documento, cliente.Id)).ReturnsAsync(true);
+
+        // Act
+        var act = () => _sut.AtualizarStatusAsync(cliente.Id, true);
+
+        // Assert
+        await act.Should().ThrowAsync<ConflictException>();
+        _clienteRepositoryMock.Verify(r => r.Update(It.IsAny<Cliente>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AtualizarStatusAsync_DeveReativar_QuandoNaoHaColisaoComOutroAtivo()
+    {
+        // Arrange
+        var cliente = new Cliente { Nome = "João Silva", Email = "joao@example.com", Documento = "52998224725", Ativo = false };
+        _clienteRepositoryMock.Setup(r => r.GetByIdAsync(cliente.Id)).ReturnsAsync(cliente);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComEmailAsync(cliente.Email, cliente.Id)).ReturnsAsync(false);
+        _clienteRepositoryMock.Setup(r => r.ExistsAtivoComDocumentoAsync(cliente.Documento, cliente.Id)).ReturnsAsync(false);
+
+        // Act
+        await _sut.AtualizarStatusAsync(cliente.Id, true);
+
+        // Assert
+        cliente.Ativo.Should().BeTrue();
+        _clienteRepositoryMock.Verify(r => r.Update(cliente), Times.Once);
+        _clienteRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task AtualizarStatusAsync_NaoDeveVerificarConflito_QuandoDesativando()
+    {
+        // Arrange
+        var cliente = new Cliente { Nome = "João Silva", Email = "joao@example.com", Documento = "52998224725", Ativo = true };
+        _clienteRepositoryMock.Setup(r => r.GetByIdAsync(cliente.Id)).ReturnsAsync(cliente);
+
+        // Act
+        await _sut.AtualizarStatusAsync(cliente.Id, false);
+
+        // Assert
+        cliente.Ativo.Should().BeFalse();
+        _clienteRepositoryMock.Verify(r => r.ExistsAtivoComEmailAsync(It.IsAny<string>(), It.IsAny<Guid?>()), Times.Never);
+        _clienteRepositoryMock.Verify(r => r.ExistsAtivoComDocumentoAsync(It.IsAny<string>(), It.IsAny<Guid?>()), Times.Never);
     }
 }
