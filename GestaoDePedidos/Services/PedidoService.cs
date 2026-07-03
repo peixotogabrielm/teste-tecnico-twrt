@@ -35,12 +35,6 @@ public class PedidoService : IPedidoService
             throw new BadRequestException("O pedido deve possuir pelo menos um item.");
         }
 
-        var produtoIds = request.Itens.Select(i => i.ProdutoId).ToList();
-        if (produtoIds.Distinct().Count() != produtoIds.Count)
-        {
-            throw new BadRequestException("Produto duplicado no pedido: cada produto deve aparecer no máximo uma vez.");
-        }
-
         foreach (var itemRequest in request.Itens)
         {
             if (itemRequest.Quantidade <= 0)
@@ -48,6 +42,13 @@ public class PedidoService : IPedidoService
                 throw new BadRequestException("A quantidade deve ser maior que zero.");
             }
         }
+
+        var itensMesclados = request.Itens
+            .GroupBy(i => i.ProdutoId)
+            .Select(g => new { ProdutoId = g.Key, Quantidade = g.Sum(i => i.Quantidade) })
+            .ToList();
+
+        var produtoIds = itensMesclados.Select(i => i.ProdutoId).ToList();
 
         var produtos = await _context.Produtos
             .AsNoTracking()
@@ -60,9 +61,9 @@ public class PedidoService : IPedidoService
             Status = PedidoStatus.Criado
         };
 
-        foreach (var itemRequest in request.Itens)
+        foreach (var itemMesclado in itensMesclados)
         {
-            if (!produtos.TryGetValue(itemRequest.ProdutoId, out var produto))
+            if (!produtos.TryGetValue(itemMesclado.ProdutoId, out var produto))
             {
                 throw new NotFoundException("Produto não encontrado.");
             }
@@ -72,14 +73,14 @@ public class PedidoService : IPedidoService
                 throw new BadRequestException("Produto inativo não pode ser vendido.");
             }
 
-            if (!QuantidadeValidator.IsValid(itemRequest.Quantidade, produto.PermiteVendaFracionada))
+            if (!QuantidadeValidator.IsValid(itemMesclado.Quantidade, produto.PermiteVendaFracionada))
             {
                 throw new BadRequestException(produto.PermiteVendaFracionada
                     ? "Produto fracionado aceita no máximo 3 casas decimais."
                     : "Este produto não permite venda fracionada.");
             }
 
-            if (produto.EstoqueDisponivel < itemRequest.Quantidade)
+            if (produto.EstoqueDisponivel < itemMesclado.Quantidade)
             {
                 throw new BadRequestException("Estoque insuficiente para o produto informado.");
             }
@@ -89,7 +90,7 @@ public class PedidoService : IPedidoService
             pedido.Itens.Add(new PedidoItem
             {
                 ProdutoId = produto.Id,
-                Quantidade = itemRequest.Quantidade,
+                Quantidade = itemMesclado.Quantidade,
                 PrecoUnitario = produto.Preco,
                 ValorTotal = valorTotalItem
             });
