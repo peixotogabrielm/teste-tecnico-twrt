@@ -61,7 +61,7 @@ public class PedidoController : ControllerBase
         return Ok(pedido);
     }
 
-    /// <summary>Transiciona o status do pedido (ex.: Criado → Pago, Pago → Cancelado). Cancelamento restaura o estoque.</summary>
+    /// <summary>Transiciona o status do pedido (ex.: Criado → Pago, Criado → Cancelado). Cancelamento restaura o estoque.</summary>
     /// <response code="204">Status atualizado.</response>
     /// <response code="400">Transição de status inválida para o estado atual do pedido.</response>
     /// <response code="404">Nenhum pedido com esse id.</response>

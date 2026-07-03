@@ -7,7 +7,7 @@ public static class PedidoStatusTransicaoValidator
     private static readonly Dictionary<PedidoStatus, PedidoStatus[]> TransicoesPermitidas = new()
     {
         [PedidoStatus.Criado] = new[] { PedidoStatus.Pago, PedidoStatus.Cancelado },
-        [PedidoStatus.Pago] = new[] { PedidoStatus.Enviado, PedidoStatus.Cancelado },
+        [PedidoStatus.Pago] = new[] { PedidoStatus.Enviado },
         [PedidoStatus.Enviado] = Array.Empty<PedidoStatus>(),
         [PedidoStatus.Cancelado] = Array.Empty<PedidoStatus>()
     };
