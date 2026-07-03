@@ -76,8 +76,6 @@ Essa estrutura evita o custo de vários projetos para uma API pequena. O trade-o
 │   ├── Helpers/
 │   ├── Services/
 │   └── README.md
-│
-├── Desafio-API-Pedidos.md
 └── README.md
 ```
 
@@ -363,19 +361,19 @@ As decisões principais estão registradas aqui para que o README seja suficient
 
 ## Trade-offs
 
-| Escolha | Custo ou limitação |
-| ------- | ------------------ |
-| Projeto único | Simplifica a solução, mas a separação entre camadas é apenas lógica. |
-| Repositório genérico e acesso direto ao contexto | Evita uma unidade de trabalho prematura, mas cria dois padrões de acesso a dados. |
-| Mapeamento manual e Data Annotations | Reduz dependências, porém gera código repetitivo e validações distribuídas. |
-| Exceções e contrato de erro próprio | Simplifica os controllers, mas usa exceções para falhas esperadas e não adota diretamente `ProblemDetails`. |
-| JWT apenas para administrador | Atende ao escopo, mas não oferece login de cliente, refresh token ou revogação. |
-| Baixa condicional sem `RowVersion` | Protege o estoque, mas não cobre toda alteração concorrente de `Produto`. |
-| Ajuste manual de estoque simples | Não possui histórico de movimentação nem proteção contra lost update. |
-| Arredondamento por item | Mantém o total igual à soma exibida, mas pode diferir do arredondamento feito apenas no total final. |
-| Paginação por offset | É simples, mas perde eficiência em páginas altas e depende de ordenação estável. |
-| SQLite nos testes | Mantém a suíte rápida, mas não substitui testes HTTP ou testes contra SQL Server real. |
-| Conversão de fuso parcial | Pedidos seguem `America/Sao_Paulo`, mas clientes e produtos ainda não usam o mesmo padrão. |
+| Escolha                                          | Custo ou limitação                                                                                          |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Projeto único                                    | Simplifica a solução, mas a separação entre camadas é apenas lógica.                                        |
+| Repositório genérico e acesso direto ao contexto | Evita uma unidade de trabalho prematura, mas cria dois padrões de acesso a dados.                           |
+| Mapeamento manual e Data Annotations             | Reduz dependências, porém gera código repetitivo e validações distribuídas.                                 |
+| Exceções e contrato de erro próprio              | Simplifica os controllers, mas usa exceções para falhas esperadas e não adota diretamente `ProblemDetails`. |
+| JWT apenas para administrador                    | Atende ao escopo, mas não oferece login de cliente, refresh token ou revogação.                             |
+| Baixa condicional sem `RowVersion`               | Protege o estoque, mas não cobre toda alteração concorrente de `Produto`.                                   |
+| Ajuste manual de estoque simples                 | Não possui histórico de movimentação nem proteção contra lost update.                                       |
+| Arredondamento por item                          | Mantém o total igual à soma exibida, mas pode diferir do arredondamento feito apenas no total final.        |
+| Paginação por offset                             | É simples, mas perde eficiência em páginas altas e depende de ordenação estável.                            |
+| SQLite nos testes                                | Mantém a suíte rápida, mas não substitui testes HTTP ou testes contra SQL Server real.                      |
+| Conversão de fuso parcial                        | Pedidos seguem `America/Sao_Paulo`, mas clientes e produtos ainda não usam o mesmo padrão.                  |
 
 ## Fora do escopo atual
 
