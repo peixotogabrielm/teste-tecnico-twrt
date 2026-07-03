@@ -24,6 +24,11 @@ public class ProdutoService : IProdutoService
             throw new BadRequestException("O preço deve ser maior que zero.");
         }
 
+        if (!ValorMonetarioValidator.IsValid(request.Preco))
+        {
+            throw new BadRequestException("O preço pode ter no máximo 2 casas decimais.");
+        }
+
         if (request.EstoqueDisponivel < 0)
         {
             throw new BadRequestException("O estoque disponível não pode ser negativo.");
@@ -72,6 +77,11 @@ public class ProdutoService : IProdutoService
         if (request.Preco <= 0)
         {
             throw new BadRequestException("O preço deve ser maior que zero.");
+        }
+
+        if (!ValorMonetarioValidator.IsValid(request.Preco))
+        {
+            throw new BadRequestException("O preço pode ter no máximo 2 casas decimais.");
         }
 
         var desabilitandoVendaFracionada = produto.PermiteVendaFracionada && !request.PermiteVendaFracionada;
