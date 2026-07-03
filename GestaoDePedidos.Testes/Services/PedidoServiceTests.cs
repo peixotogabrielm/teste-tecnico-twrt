@@ -294,14 +294,14 @@ public class PedidoServiceTests : IDisposable
     [
         [PedidoStatus.Criado, PedidoStatus.Pago],
         [PedidoStatus.Criado, PedidoStatus.Cancelado],
-        [PedidoStatus.Pago, PedidoStatus.Enviado],
-        [PedidoStatus.Pago, PedidoStatus.Cancelado]
+        [PedidoStatus.Pago, PedidoStatus.Enviado]
     ];
 
     public static IEnumerable<object[]> TransicoesInvalidas =>
     [
         [PedidoStatus.Criado, PedidoStatus.Enviado],
         [PedidoStatus.Pago, PedidoStatus.Criado],
+        [PedidoStatus.Pago, PedidoStatus.Cancelado],
         [PedidoStatus.Enviado, PedidoStatus.Pago],
         [PedidoStatus.Enviado, PedidoStatus.Cancelado],
         [PedidoStatus.Cancelado, PedidoStatus.Criado],
