@@ -9,7 +9,7 @@ public static class DocumentoValidator
             return false;
         }
 
-        var digitos = new string(documento.Where(char.IsDigit).ToArray());
+        var digitos = Normalizar(documento);
 
         return digitos.Length switch
         {
@@ -18,6 +18,9 @@ public static class DocumentoValidator
             _ => false
         };
     }
+
+    public static string Normalizar(string documento) =>
+        new(documento.Where(char.IsDigit).ToArray());
 
     private static bool IsCpfValido(string cpf)
     {
