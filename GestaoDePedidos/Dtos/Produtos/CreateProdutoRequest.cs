@@ -11,6 +11,7 @@ public class CreateProdutoRequest
     [StringLength(1000)]
     public string? Descricao { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335", MinimumIsExclusive = true, ErrorMessage = "O preço deve ser maior que zero.")]
     public decimal Preco { get; set; }
 
     public decimal EstoqueDisponivel { get; set; }
